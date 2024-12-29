@@ -1,1 +1,1 @@
-# NLP-hate-speech-detector
+# NLP-hate-speech-detector by chuck

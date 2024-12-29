@@ -1,8 +1,6 @@
 import pandas as pd
 import string
 
-
-
 # 1. Tải dữ liệu từ file CSV
 file_path = "cleaned_hate_speech_data.csv"  # Đường dẫn file
 df = pd.read_csv(file_path)

@@ -43,8 +43,10 @@ if __name__ == "__main__":
     df = pd.read_csv(train_path)
 
     # 2. Trích xuất cột 'text' và 'label'
-    texts = df['text'].tolist()  # Danh sách văn bản
-    labels = df['label'].tolist()  # Danh sách nhãn
+    texts = df['Content'].tolist()  # Danh sách văn bản
+
+    # Correctly read labels and convert to integers
+    labels = df['Label'].astype(int).tolist()
 
     # 3. Danh sách lớp mục tiêu
     target_classes = list(set(labels))  # Các lớp trong dữ liệu

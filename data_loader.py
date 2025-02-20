@@ -1,112 +1,136 @@
 import re
 import html
-import emoji
 import pandas as pd
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
-
-# Tải tài nguyên cần thiết từ NLTK
 import nltk
 
-# chi chay lan dau
-nltk.download('wordnet')
-nltk.download('stopwords')
+# Download resources (only needed once)
+# nltk.download('wordnet')
+# nltk.download('stopwords')
 
-# Khởi tạo stopwords và lemmatizer
+# Stop words and lemmatizer
 stop_words = set(stopwords.words('english'))
 lemmatizer = WordNetLemmatizer()
 
-def load_hate_speech_data(file_path):
+def load_and_preprocess_data(file_path, output_path):
     """
-    Loads the hate speech dataset and extracts labels and text.
+    Loads, preprocesses, and saves the hate speech dataset.
 
     Args:
         file_path: Path to the dataset file (CSV).
-
-    Returns:
-        A list of tuples, where each tuple contains (label, text).
+        output_path: Path to save the cleaned dataset (CSV).
     """
-    data = []
     try:
-        df = pd.read_csv(file_path)
+        # Read CSV, treating the first row as the header
+        df = pd.read_csv(file_path, header=0, usecols=['Content', 'Label'])
 
-        # Tiền xử lý dữ liệu
+        # Preprocess data
+        df['Content'] = df['Content'].apply(preprocess_text)
 
-        for _, row in df.iterrows():
-            label = row['class']
-            text = preprocess_text(row['tweet'])
-            if text:  # Chỉ thêm dữ liệu không rỗng
-                data.append((label, text))
+        # Remove rows with empty text after preprocessing
+        df = df[df['Content'].str.strip() != '']
 
-        return data
+        # Save cleaned data with original column names and order
+        df.to_csv(output_path, index=False)
+        print(f"Cleaned data saved to: {output_path}")
+        print(f"Number of rows processed: {len(df)}")
+        print("Sample data:\n", df.head())
+
     except FileNotFoundError:
-        print(f"File không tồn tại: {file_path}")
+        print(f"File not found: {file_path}")
     except Exception as e:
-        print(f"Có lỗi xảy ra: {e}")
-
+        print(f"An error occurred: {e}")
 
 def preprocess_text(text):
     """
-    Tiền xử lý văn bản bằng cách loại bỏ các ký tự đặc biệt, emoji, URL,
-    chuyển đổi HTML entities, và lowercase.
-
-    Args:
-        text: Chuỗi văn bản đầu vào.
-
-    Returns:
-        Chuỗi văn bản đã được tiền xử lý.
+    Preprocesses text (same as before).
     """
-    # Xóa mentions (@user)
+    if not isinstance(text, str):
+        return ""
+
+    # Remove mentions (@user)
     text = re.sub(r"(@[A-Za-z0-9_]+)", "", text)
 
-    # Xóa hashtags (#) nhưng giữ từ sau #
+    # Remove hashtags (#) but keep the word after #
     text = re.sub(r"#", "", text)
 
-    # Xóa URL
+    # Remove URLs
     text = re.sub(r"http\S+|www\S+|https\S+", "", text, flags=re.MULTILINE)
 
-    # Chuyển HTML entities
+    # Convert HTML entities
     text = html.unescape(text)
 
-    # Chuyển emoji thành dạng văn bản
-    text = emoji.demojize(text)
-
-    # Xóa ký tự đặc biệt và số, giữ chữ cái và khoảng trắng
+    # Remove special characters and numbers, keep letters and spaces
     text = re.sub(r"[^a-zA-Z\s]", "", text)
 
-    # Chuyển thành chữ thường
+    # Lowercase
     text = text.lower()
 
-    # Xóa stopwords
+    # Remove stop words
     text = " ".join(word for word in text.split() if word not in stop_words)
 
     # Lemmatization
     text = " ".join(lemmatizer.lemmatize(word) for word in text.split())
 
-    # Xóa khoảng trắng thừa
+    # Remove extra whitespace
     text = re.sub(r"\s+", " ", text).strip()
 
-    # 7. Bỏ RT (retweet) ở đầu câu
+    # Remove RT (retweet) at the beginning
     text = re.sub(r"^rt", "", text).strip()
+
     return text
 
-
-def save_preprocessed_data(data, output_path):
+def clean_input_sentence(text):
     """
-    Lưu dữ liệu đã xử lý vào file.
-    """
-    df = pd.DataFrame(data, columns=["label", "text"])
-    df.to_csv(output_path, index=False)
-    print(f"Dữ liệu đã lưu tại: {output_path}")
+    Cleans a single input sentence using the same preprocessing steps as before.
 
+    Args:
+        text: The input sentence.
+
+    Returns:
+        A list of cleaned words from the sentence.
+    """
+    if not isinstance(text, str):
+        return []
+
+    # Remove mentions (@user)
+    text = re.sub(r"(@[A-Za-z0-9_]+)", "", text)
+
+    # Remove hashtags (#) but keep the word after #
+    text = re.sub(r"#", "", text)
+
+    # Remove URLs
+    text = re.sub(r"http\S+|www\S+|https\S+", "", text, flags=re.MULTILINE)
+
+    # Convert HTML entities
+    text = html.unescape(text)
+
+    # Remove special characters and numbers, keep letters and spaces
+    text = re.sub(r"[^a-zA-Z\s]", "", text)
+
+    # Lowercase
+    text = text.lower()
+
+    # Remove stop words
+    words = [word for word in text.split() if word not in stop_words]
+
+    # Lemmatization
+    words = [lemmatizer.lemmatize(word) for word in words]
+
+    # Remove extra whitespace
+    text = re.sub(r"\s+", " ", " ".join(words)).strip()
+
+    # Remove RT (retweet) at the beginning
+    text = re.sub(r"^rt", "", text).strip()
+
+    return text.split()
 
 if __name__ == "__main__":
-    input_file = "labeled_data.csv"
-    output_file = "cleaned_hate_speech_data.csv"
+    input_file1 = "labeled_data.csv"
+    output_file1 = "cleaned_labeled_data_1.csv"
+    load_and_preprocess_data(input_file1, output_file1)
 
-    processed_data = load_hate_speech_data(input_file)
-
-    save_preprocessed_data(processed_data, output_file)
-
-
-
+    input_file2 = "labeled_data_2.csv"
+    output_file2 = "cleaned_labeled_data_2.csv"
+    load_and_preprocess_data(input_file2, output_file2)

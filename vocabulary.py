@@ -1,33 +1,34 @@
-import pandas as pd
+from collections import Counter
 import string
 
-# 1. Tải dữ liệu từ file CSV
-file_path = "cleaned_hate_speech_data.csv"  # Đường dẫn file
-df = pd.read_csv(file_path)
-
-# 2. Lấy danh sách văn bản từ cột 'text'
-texts = df['text'].tolist()
-
-def build_vocab(texts):
-    """Build vocabulary from dataset.
+def build_vocab(texts, min_freq=2, ngram_range=(1, 1)):
+    """
+    Builds vocabulary from a list of texts, with options for frequency filtering and n-grams.
 
     Args:
-        texts (list): list of tokenized sentences.
+        texts: List of text data (strings).
+        min_freq: Minimum frequency for a word to be included in the vocabulary.
+        ngram_range: Tuple (min_n, max_n) specifying the range of n-gram sizes to consider.
+                     (1, 1) for unigrams, (1, 2) for unigrams and bigrams, (2, 2) for bigrams only, etc.
 
     Returns:
-        vocab (dict): map from word to index.
+        A vocabulary (dictionary) mapping words/n-grams to unique integer indices.
     """
+    word_counts = Counter()
+    for text in texts:
+        # Preprocessing: Lowercase and remove punctuation
+        words = [word.lower().strip(string.punctuation) for word in text.split() if word.strip(string.punctuation)]
+
+        # N-gram generation
+        for n in range(ngram_range[0], ngram_range[1] + 1):
+            for i in range(len(words) - n + 1):
+                ngram = " ".join(words[i:i + n])
+                word_counts[ngram] += 1
+
+    # Build vocabulary with frequency filtering
     vocab = {}
-    for s in texts:
-        for word in s.split():
-            # Loại bỏ dấu câu (punctuation)
-            if word in string.punctuation:
-                continue
-            # Thêm từ vào vocab nếu chưa có
-            if word not in vocab:
-                idx = len(vocab)
-                vocab[word] = idx
-                print(vocab)
+    for word, count in word_counts.items():
+        if count >= min_freq:
+            vocab[word] = len(vocab)
+
     return vocab
-
-

@@ -2,11 +2,11 @@
   
 
 Step 1: dataloader.py :
-        clean the data from "labeled_data.csv", return a "cleaned_hate_speech_data.csv"
-        that only contain label and clean text.
+        clean the data from "labeled_data.csv" and "labeled_data_2.csv", 
+        returns 2 "cleaned_hate_speech_data.csv"s that only contain label and clean text.
 
 Step 2: split.py :
-        Split the cleaned data into "train_data.csv"/"test_data.csv" with a 80/20 %
+        Split the 2 cleaned dataset into "train_data.csv"/"test_data.csv" with a 80/20 %
 
 Step 3: vocabulary.py : 
         def "build_vocab" is used to build a vocabulary:
